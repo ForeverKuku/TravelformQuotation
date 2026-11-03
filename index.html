@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalatravelstours - Travel Quotation Request & WhatsApp Form</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#0b1329] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white relative overflow-x-hidden"
+      x-data="travelApp()"
+      x-init="initApp()">
+
+    <!-- Ambient Background Lighting Effect -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-teal-600/20 via-sky-600/10 to-transparent blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-0 right-0 w-96 h-96 bg-teal-500/10 blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Toast Notification System -->
+    <div x-cloak
+         x-show="toast.show"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-4 scale-95"
+         x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+         x-transition:leave-end="opacity-0 transform translate-y-4 scale-95"
+         class="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-slate-900/95 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-teal-500/30 backdrop-blur-md">
+        <div class="w-8 h-8 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+        </div>
+        <div>
+            <p class="font-semibold text-sm" x-text="toast.title || 'Success'"></p>
+            <p class="text-xs text-slate-400" x-text="toast.message"></p>
+        </div>
+    </div>
+
+    <!-- Agent Phone Number Config Modal -->
+    <div x-cloak
+         x-show="showPhoneModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div @click.away="showPhoneModal = false" class="glass-card w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-700/60 space-y-5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-teal-500/10 text-teal-400 rounded-xl">
+                        <i data-lucide="settings" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white">Kalatravelstours WhatsApp Setup</h3>
+                </div>
+                <button @click="showPhoneModal = false" class="text-slate-400 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Enter your WhatsApp Business or personal phone number with full country code (no `+` or spaces). Client requests will be automatically directed to this number.
+            </p>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">WhatsApp Phone Number</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="phone" class="w-4 h-4"></i>
+                    </div>
+                    <input type="text" x-model="agentPhone" placeholder="e.g. 447593164025" class="w-full pl-10 pr-4 py-3 glass-input rounded-xl text-sm text-white outline-none focus:ring-1 focus:ring-teal-500">
+                </div>
+                <span class="text-[11px] text-slate-500 mt-1 block">Format: Country code + Number (e.g. 447593164025)</span>
+            </div>
+
+            <div class="flex gap-3 justify-end pt-2">
+                <button @click="showPhoneModal = false" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 transition">Cancel</button>
+                <button @click="saveAgentPhone()" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-teal-500 hover:bg-teal-400 text-slate-950 transition shadow-lg shadow-teal-500/20">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-[#0b1329]/80 backdrop-blur-xl sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <!-- Brand Logo & Name -->
+            <div class="flex items-center gap-3">
+                <div class="h-10 flex items-center justify-center">
+                    <img src="img/logo.png" alt="Kalatravelstours Logo" class="h-9 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(20,184,166,0.4)]" onerror="this.style.display='none'">
+                </div>
+                <div>
+                    <h1 class="font-bold text-base text-white leading-tight flex items-center gap-2">
+                        Kalatravelstours <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 font-semibold border border-teal-500/20">Travel Affordable for All</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400">Flights, Tours, Stays & Holidays</p>
+                </div>
+            </div>
+
+            <!-- Settings Button -->
+            <div class="flex items-center gap-2">
+                <button @click="showPhoneModal = true" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-teal-400 transition" title="Agency Settings">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+        
+        <!-- Hero Banner -->
+        <div class="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden border-teal-500/20">
+            <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+                <i data-lucide="compass" class="w-64 h-64 text-teal-400"></i>
+            </div>
+            <div class="max-w-xl space-y-2 relative z-10">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span> Kalatravelstours Direct WhatsApp Quote
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Request Your Custom Travel Itinerary</h2>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">Fill in your travel preferences below. Once submitted, your custom trip request opens instantly in WhatsApp to connect with our expert travel agents.</p>
+            </div>
+        </div>
+
+        <!-- Client Travel Form -->
+        <form @submit.prevent="submitClientForm()" class="glass-card rounded-3xl p-6 sm:p-8 border border-slate-800/80 shadow-2xl space-y-8">
+            
+            <!-- Section 1: Contact Details -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-teal-400 flex items-center gap-2 border-b border-slate-800/80 pb-3">
+                    <i data-lucide="user-check" class="w-4 h-4"></i> 1. Contact Information
+                </h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <!-- Full Name -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Full Name <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="user" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" x-model="form.fullName" required placeholder="John Doe" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Email Address <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="mail" class="w-4 h-4"></i>
+                            </div>
+                            <input type="email" x-model="form.email" required placeholder="john@example.com" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Phone Number <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="phone-call" class="w-4 h-4"></i>
+                            </div>
+                            <input type="tel" x-model="form.phone" required placeholder="+1 234 567 890" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Route & Schedule -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-teal-400 flex items-center gap-2 border-b border-slate-800/80 pb-3">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i> 2. Route & Travel Dates
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Traveling From -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Traveling From <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="plane-takeoff" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" x-model="form.travelingFrom" required placeholder="e.g. London (LHR) or Monrovia" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Traveling To -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Traveling To <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="plane-landing" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" x-model="form.travelingTo" required placeholder="e.g. Dubai, Zanzibar, Barcelona" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Travel Dates -->
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Travel Dates (Departure & Return / Flexibility) <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" x-model="form.travelDates" required placeholder="e.g. Nov 12 - Nov 26, 2026 (Flexible +/- 2 days)" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Preferences & Options -->
+            <div class="space-y-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-teal-400 flex items-center gap-2 border-b border-slate-800/80 pb-3">
+                    <i data-lucide="sliders" class="w-4 h-4"></i> 3. Package Preferences & Services
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Preferred Airline -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Preferred Airline / Stays</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            </div>
+                            <input type="text" x-model="form.preferredAirline" placeholder="e.g. Emirates, Hotel Bundle, No Preference" class="w-full pl-10 pr-3 py-2.5 glass-input rounded-xl text-sm text-white outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Baggage Allowance -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Baggage Allowance <span class="text-rose-400">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                                <i data-lucide="luggage" class="w-4 h-4"></i>
+                            </div>
+                            <select x-model="form.baggageAllowance" required class="w-full pl-10 pr-8 py-2.5 glass-input rounded-xl text-sm text-white outline-none appearance-none cursor-pointer">
+                                <option value="Standard Check-in (1x 23kg)" class="bg-slate-900 text-white">Standard Check-in (1x 23kg)</option>
+                                <option value="Extra Baggage (2x 23kg / 32kg)" class="bg-slate-900 text-white">Extra Baggage (2x 23kg / 32kg)</option>
+                                <option value="Hand-luggage / Cabin Only" class="bg-slate-900 text-white">Hand-luggage / Cabin Only</option>
+                                <option value="Unsure / Need Recommendation" class="bg-slate-900 text-white">Unsure / Need Recommendation</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Needs -->
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Additional Needs / Special Requirements / Extras</label>
+                        <textarea x-model="form.additionalNeeds" rows="3" placeholder="e.g. Car Rental, Airport Transfer, Guided Tours, Visa services support..." class="w-full p-3 glass-input rounded-xl text-sm text-white outline-none resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="pt-2 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div class="text-xs text-slate-400 flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-teal-400"></i>
+                    <span>Encrypted secure dispatch to Kalatravelstours WhatsApp</span>
+                </div>
+
+                <button type="submit" class="w-full sm:w-auto px-8 py-3.5 bg-teal-500 hover:bg-teal-400 active:scale-95 text-slate-950 font-bold rounded-2xl transition shadow-xl shadow-teal-500/20 flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i> Submit via WhatsApp
+                </button>
+            </div>
+        </form>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/80 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Kalatravelstours (Kala Travel Agency) • Travel affordable for all</p>
+    </footer>
+
+    <!-- JavaScript Link -->
+    <script src="script.js"></script>
+</body>
+</html>
